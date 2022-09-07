@@ -28,6 +28,7 @@ encoding.default = 'CP1251'
 local u8 = encoding.UTF8
 local faicons = require 'fa-icons'
 local ti = require 'tabler_icons'
+local fa = require 'fAwesome5'
 local mem = require 'memory'
 local wm  = require('lib.windows.message')
 local dlstatus = require('moonloader').download_status
@@ -38,12 +39,16 @@ local script_path = thisScript().path
 local script_url = "https://raw.githubusercontent.com/akacross/nametags/main/nametags.lua"
 local update_url = "https://raw.githubusercontent.com/akacross/nametags/main/nametags.txt"
 
-local function loadIconicFont(fontSize, min, max, fontdata)
+local function loadIconicFont(fromfile, fontSize, min, max, fontdata)
     local config = imgui.ImFontConfig()
     config.MergeMode = true
     config.PixelSnapH = true
-    local iconRanges = imgui.new.ImWchar[3](min, max, 0)
-    imgui.GetIO().Fonts:AddFontFromMemoryCompressedBase85TTF(fontdata, fontSize, config, iconRanges)
+    local iconRanges = new.ImWchar[3](min, max, 0)
+	if fromfile then
+		imgui.GetIO().Fonts:AddFontFromFileTTF(fontdata, fontSize, config, iconRanges)
+	else
+		imgui.GetIO().Fonts:AddFontFromMemoryCompressedBase85TTF(fontdata, fontSize, config, iconRanges)
+	end
 end
 
 local blank = {}
@@ -292,7 +297,7 @@ function rendernametags(v)
 				)
 			end
 
-			if nt.CHAT_BUBBLE.enabled and bubble_pool[id] ~= nil and dist < bubble_pool[id].distance then	
+			if nt.CHAT_BUBBLE.enabled and bubble_pool[id] ~= nil and dist < bubble_pool[id].distance and v ~= ped then	
 				if os.time() < bubble_pool[id].remove_time then
 					sy = sy - nt.CHAT_BUBBLE.indent
 					render_text_wrapped(
@@ -409,7 +414,6 @@ function nameTags_setState(ptr, state)
 	mem.setint8(ptr + 56, state) 
 end
 
--- IMGUI_API bool          CustomButton(const char* label, const ImVec4& col, const ImVec4& col_focus, const ImVec4& col_click, const ImVec2& size = ImVec2(0,0));
 function imgui.CustomButton(name, color, colorHovered, colorActive, size)
     local clr = imgui.Col
     imgui.PushStyleColor(clr.Button, color)
@@ -421,17 +425,16 @@ function imgui.CustomButton(name, color, colorHovered, colorActive, size)
     return result
 end
 
--- imgui.OnInitialize() called only once, before the first render
 imgui.OnInitialize(function()
-	apply_custom_style() -- apply custom style
-	
-	loadIconicFont(14, ti.min_range, ti.max_range, ti.get_font_data_base85())
-	loadIconicFont(14, faicons.min_range, faicons.max_range, faicons.get_font_data_base85())
+	apply_custom_style()
+
+	loadIconicFont(false, 14.0, faicons.min_range, faicons.max_range, faicons.get_font_data_base85())
+	loadIconicFont(true, 14.0, fa.min_range, fa.max_range, 'moonloader/resource/fonts/fa-solid-900.ttf')
+	loadIconicFont(false, 14.0, ti.min_range, ti.max_range, ti.get_font_data_base85())
 
 	imgui.GetIO().ConfigWindowsMoveFromTitleBarOnly = true
 	imgui.GetIO().IniFilename = nil
 end)
-
 
 imgui.OnFrame(function() return window_state[0] end,
 function()
